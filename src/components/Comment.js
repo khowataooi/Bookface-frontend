@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const Comment = ({ postId }) => {
@@ -7,15 +7,42 @@ const Comment = ({ postId }) => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState("");
 
-
+  useEffect(() => {
+    const fetchComments = async (postId) => {
+      try {
+        const token = localStorage.getItem("jwt");
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        const response = await axios.get(
+          `http://localhost:8080/api/comments/${postId}/`,
+          config
+        );
+        setComments(response.data);
+      } catch (error) {
+        console.log("Error fetching comments:", error);
+      }
+    };
+    fetchComments(postId);
+  }, [postId]);
+  
   const handleNewComment = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem("jwt");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
       const response = await axios.post(
         `http://localhost:8080/api/comments/${postId}`,
         {
           content: newComment,
-        }
+        },
+        config
       );
       if (response.status === 201) {
         setComments([...comments, response.data]);
@@ -33,9 +60,16 @@ const Comment = ({ postId }) => {
 
   const handleUpdateComment = async (commentId) => {
     try {
+      const token = localStorage.getItem("jwt");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
       const response = await axios.put(
         `http://localhost:8080/api/comments/${commentId}`,
-        { content: editingContent }
+        { content: editingContent },
+        config
       );
       if (response.status === 200) {
         const updatedComments = comments.map((comment) =>
@@ -52,12 +86,18 @@ const Comment = ({ postId }) => {
     }
   };
 
-
   const handleDeleteComment = async (commentId) => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
       try {
+        const token = localStorage.getItem("jwt");
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
         const response = await axios.delete(
-          `http://localhost:8080/api/comments/${commentId}`
+          `http://localhost:8080/api/comments/${commentId}`,
+          config
         );
         if (response.status === 200) {
           const updatedComment = comments.filter(
@@ -84,27 +124,34 @@ const Comment = ({ postId }) => {
         <button type="submit">Comment</button>
       </form>
       {comments.map((comment, index) => (
-  <div key={index}>
-    {editingCommentId === comment.id ? (
-      <div>
-        <input
-          type="text"
-          value={editingContent}
-          onChange={(e) => setEditingContent(e.target.value)}
-        />
-        <button onClick={() => handleUpdateComment(comment.id)}>Submit</button>
-        <button onClick={() => setEditingCommentId(null)}>Cancel</button>
-      </div>
-    ) : (
-      <div>
-        <p>{comment.content}</p>
-        <button onClick={() => handleEditComment(comment.id, comment.content)}>Edit</button>
-        <button onClick={() => handleDeleteComment(comment.id)}>Delete</button>
-      </div>
-    )}
-  </div>
-))}
-
+        <div key={index}>
+          {editingCommentId === comment.id ? (
+            <div>
+              <input
+                type="text"
+                value={editingContent}
+                onChange={(e) => setEditingContent(e.target.value)}
+              />
+              <button onClick={() => handleUpdateComment(comment.id)}>
+                Submit
+              </button>
+              <button onClick={() => setEditingCommentId(null)}>Cancel</button>
+            </div>
+          ) : (
+            <div>
+              <p>{comment.content}</p>
+              <button
+                onClick={() => handleEditComment(comment.id, comment.content)}
+              >
+                Edit
+              </button>
+              <button onClick={() => handleDeleteComment(comment.id)}>
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };

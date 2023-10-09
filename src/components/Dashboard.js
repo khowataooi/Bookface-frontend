@@ -4,13 +4,22 @@ import Comment from "./Comment";
 
 const Dashboard = () => {
   const [newPost, setNewPost] = useState("");
-  const [post, setPost] = useState([]);
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/posts");
-        setPost(response.data);
+        const token = localStorage.getItem("jwt");
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        const response = await axios.get(
+          "http://localhost:8080/api/posts",
+          config
+        );
+        setPosts(response.data);
       } catch (error) {
         console.log("Error fetching posts:", error);
       }
@@ -22,12 +31,22 @@ const Dashboard = () => {
   const handleNewPost = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:8080/api/posts", {
-        content: newPost,
-      });
+      const token = localStorage.getItem("jwt");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = await axios.post(
+        "http://localhost:8080/api/posts",
+        {
+          content: newPost,
+        },
+        config
+      );
       if (response.status === 201) {
         console.log("New post created:", response.data);
-        setPost([...post, response.data]);
+        setPosts([...posts, response.data]);
         setNewPost("");
       }
     } catch (error) {
@@ -40,16 +59,23 @@ const Dashboard = () => {
     const newContent = prompt("Edit your post:", currentContent);
     if (newContent) {
       try {
+        const token = localStorage.getItem("jwt");
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
         const response = await axios.put(
           `http://localhost:8080/api/posts/${postId}`,
-          { content: newContent }
+          { content: newContent },
+          config
         );
         if (response.status === 200) {
           // Update the local posts state
-          const updatedPosts = post.map((post) =>
+          const updatedPosts = posts.map((post) =>
             post.id === postId ? { ...post, content: newContent } : post
           );
-          setPost(updatedPosts);
+          setPosts(updatedPosts);
         }
       } catch (error) {
         console.log("Error editing post:", error);
@@ -60,13 +86,20 @@ const Dashboard = () => {
   const handleDeletePost = async (postId) => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       try {
+        const token = localStorage.getItem("jwt");
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
         const response = await axios.delete(
-          `http://localhost:8080/api/posts/${postId}`
+          `http://localhost:8080/api/posts/${postId}`,
+          config
         );
         if (response.status === 200) {
           // Update the local posts state
-          const updatedPosts = post.filter((post) => post.id !== postId);
-          setPost(updatedPosts);
+          const updatedPosts = posts.filter((post) => post.id !== postId);
+          setPosts(updatedPosts);
         }
       } catch (error) {
         console.log("Error deleting post:", error);
@@ -92,12 +125,14 @@ const Dashboard = () => {
       </div>
       <div>
         <h2>Existing Posts</h2>
-        {post.map((post, index) => (
+        {posts.map((post, index) => (
           <div key={index}>
             <p>{post.content}</p>
-            <button onClick={() => handleEditPost(post.id, post.content)}>Edit</button>
-            <button onclick={() => handleDeletePost(post.id)}>Delete</button>
-            <Comment postId={post.id}/>
+            <button onClick={() => handleEditPost(post.id, post.content)}>
+              Edit
+            </button>
+            <button onClick={() => handleDeletePost(post.id)}>Delete</button>
+            <Comment postId={post.id} />
           </div>
         ))}
       </div>

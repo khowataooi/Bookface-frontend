@@ -32,7 +32,7 @@ const Login = () => {
       <h1>Login</h1>
       <form onSubmit={handleSubmit}>
         <input
-          type="text"
+          type="email"
           placeholder="Username"
           onChange={(e) => setUsername(e.target.value)}
         />
